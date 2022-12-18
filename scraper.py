@@ -1,7 +1,9 @@
 import requests
 import time
 import json
+import os
 from bs4 import BeautifulSoup
+from os.path import exists
 
 lastTime= time.time()
 
@@ -26,7 +28,7 @@ def getLinks(urlEndpoint, links):
 def validLink(linkStr):
     if(linkStr[0:5] != '/wiki'):
         return False
-    noList = ['/Wikipedia', '/File', '/Encyclopedia', '/Help', '/wiki/Special', '/wiki/Talk', '/Main_Page', '/Template', '/Free_content']
+    noList = ['/Wikipedia', '/File', '/Encyclopedia', '/Help', '/wiki/Special', '/wiki/Talk', '/Main_Page', '/Template', '/Free_content', '/wiki/Category']
     for noWord in noList:
         if(linkStr.find(noWord) != -1):
             return False
@@ -36,24 +38,39 @@ def main():
     startTime = time.time()
     numToScrape = 1000
     depthToScrape = 2
-    links = {}
-    visited = []
-    count = 0
+    if not exists('links.txt'):
+        links = {}
+        visited = []
+    else:
+        links = json.load(open('links.txt'))
+        visited = list(links.keys())
+        os.remove('links.txt')
     getLinks('/wiki/Web_scraping', links)
     # print(links)
+    count = bfsIterate(numToScrape, depthToScrape, links, visited)
+    # print(links.keys())
+    json.dump(links, open('links.txt', 'w'))
+    if(count > 0):
+        print(f'Number of pages scraped this time: {count}')
+        print(f'Average time per page: {(time.time()-startTime)/count}')
+    else:
+        print('No pages scraped')
+    print(f'Total number of scraped pages: {len(links.keys())}')
+    
+def bfsIterate(numToScrape, depthToScrape, links, visited):
+    count = 0
     for i in range(depthToScrape):
         for key in list(links.keys()):
             for link in links[key]:
                 if link not in visited:
                     getLinks(link, links)
                     visited.append(link)
-                count+=1
-                if(count%10 == 0):
+                    count+=1
+                if(count%10 == 0 and count != 0):
                     print(count, ' wiki pages scraped')
                 #time.sleep(2)
-                if(count>numToScrape):
-                    print(links.keys())
-                    print(f'Average time per page: {(time.time()-startTime)/numToScrape}')
-                    return
+                if(count>=numToScrape):
+                    return count
+    return count
 if __name__ == '__main__':
     main()
