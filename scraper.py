@@ -2,6 +2,7 @@ import requests
 import time
 import json
 import os
+import threading
 from bs4 import BeautifulSoup
 from os.path import exists
 
@@ -22,7 +23,7 @@ def getLinks(urlEndpoint, links):
         linkStr = str(link.get('href'))
         if(linkStr.find(':') != -1):
             linkStr = linkStr[:linkStr.find(':')]
-        if(validLink(linkStr)):
+        if(validLink(linkStr) and linkStr not in links[urlEndpoint]):
             links[urlEndpoint].append(linkStr)
 
 def validLink(linkStr):
@@ -36,7 +37,7 @@ def validLink(linkStr):
 
 def main():
     startTime = time.time()
-    numToScrape = 1000
+    numToScrape = 10
     depthToScrape = 2
     if not exists('links.txt'):
         links = {}
@@ -45,7 +46,8 @@ def main():
         links = json.load(open('links.txt'))
         visited = list(links.keys())
         os.remove('links.txt')
-    getLinks('/wiki/Web_scraping', links)
+    if len(links.keys()) == 0:
+        getLinks('/wiki/Web_scraping', links)
     # print(links)
     count = bfsIterate(numToScrape, depthToScrape, links, visited)
     # print(links.keys())
