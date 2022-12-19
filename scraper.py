@@ -7,19 +7,17 @@ from bs4 import BeautifulSoup
 from os.path import exists
 
 lastTime= time.time()
-numThreads = 4
+numThreads = 8
 
 def getLinks(urlEndpoint, links):
     global lastTime
     links[urlEndpoint] = []
-    timeDelta = time.time()-lastTime
-    #print(f'Time spent computing: {timeDelta}')
+    # print(f'Time delta start fetch : {time.time()-lastTime}')
     lastTime = time.time()
     response = requests.get(f'https://en.wikipedia.org{urlEndpoint}')
     soup = BeautifulSoup(response.text, 'html.parser')
-    timeDelta = time.time()-lastTime
+    # print(f'Time delta end fetch: {time.time()-lastTime}')
     lastTime = time.time()
-    # print(f'Time spent waiting for response: {timeDelta}')
     for link in soup.find_all('a'):
         linkStr = str(link.get('href'))
         if(linkStr.find(':') != -1):
@@ -38,7 +36,7 @@ def validLink(linkStr):
 
 def main():
     startTime = time.time()
-    numToScrape = 100
+    numToScrape = 10
     depthToScrape = 2
     if not exists('links.txt'):
         links = {}
@@ -70,10 +68,18 @@ def bfsIterate(numToScrape, depthToScrape, links, visited):
                     t2 = threading.Thread(target=getLinks, args=(links[key][i+1], links))
                     t3 = threading.Thread(target=getLinks, args=(links[key][i+2], links))
                     t4 = threading.Thread(target=getLinks, args=(links[key][i+3], links))
+                    t5 = threading.Thread(target=getLinks, args=(links[key][i+4], links))
+                    t6 = threading.Thread(target=getLinks, args=(links[key][i+5], links))
+                    t7 = threading.Thread(target=getLinks, args=(links[key][i+6], links))
+                    t8 = threading.Thread(target=getLinks, args=(links[key][i+7], links))
                     t1Flag = False
                     t2Flag = False
                     t3Flag = False
                     t4Flag = False
+                    t5Flag = False
+                    t6Flag = False
+                    t7Flag = False
+                    t8Flag = False
                     if links[key][i] not in visited:
                         t1.start()
                         t1Flag = True
@@ -94,6 +100,26 @@ def bfsIterate(numToScrape, depthToScrape, links, visited):
                         t4Flag = True
                         visited.append(links[key][i+3])
                         count += 1
+                    if links[key][i+4] not in visited:
+                        t5.start()
+                        t5Flag = True
+                        visited.append(links[key][i+4])
+                        count += 1
+                    if links[key][i+5] not in visited:
+                        t6.start()
+                        t6Flag = True
+                        visited.append(links[key][i+5])
+                        count += 1
+                    if links[key][i+6] not in visited:
+                        t7.start()
+                        t7Flag = True
+                        visited.append(links[key][i+6])
+                        count += 1
+                    if links[key][i+7] not in visited:
+                        t8.start()
+                        t8Flag = True
+                        visited.append(links[key][i+7])
+                        count += 1
                     if t1Flag:
                         t1.join()
                     if t2Flag:
@@ -102,6 +128,14 @@ def bfsIterate(numToScrape, depthToScrape, links, visited):
                         t3.join()
                     if t4Flag:
                         t4.join()
+                    if t5Flag:
+                        t5.join()
+                    if t6Flag:
+                        t6.join()
+                    if t7Flag:
+                        t7.join()
+                    if t8Flag:
+                        t8.join()
                 else:
                     countCopy = count
                     for k in range(min(len(links[key])-i, numToScrape-countCopy)):
