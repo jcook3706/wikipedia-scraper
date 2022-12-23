@@ -36,7 +36,7 @@ def validLink(linkStr):
 
 def main():
     startTime = time.time()
-    numToScrape = 10
+    numToScrape = 1000
     depthToScrape = 2
     if not exists('links.txt'):
         links = {}
@@ -45,6 +45,7 @@ def main():
         links = json.load(open('links.txt'))
         visited = list(links.keys())
         os.remove('links.txt')
+    print(f'links.txt read in {time.time()-startTime}')
     if len(links.keys()) == 0:
         getLinks('/wiki/Web_scraping', links)
     # print(links)
@@ -72,14 +73,7 @@ def bfsIterate(numToScrape, depthToScrape, links, visited):
                     t6 = threading.Thread(target=getLinks, args=(links[key][i+5], links))
                     t7 = threading.Thread(target=getLinks, args=(links[key][i+6], links))
                     t8 = threading.Thread(target=getLinks, args=(links[key][i+7], links))
-                    t1Flag = False
-                    t2Flag = False
-                    t3Flag = False
-                    t4Flag = False
-                    t5Flag = False
-                    t6Flag = False
-                    t7Flag = False
-                    t8Flag = False
+                    t1Flag = t2Flag = t3Flag = t4Flag = t5Flag = t6Flag = t7Flag = t8Flag =False
                     if links[key][i] not in visited:
                         t1.start()
                         t1Flag = True
