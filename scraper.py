@@ -38,19 +38,25 @@ def validLink(linkStr):
 def main():
     global count, links, visited
     startTime = time.time()
-    numToScrape = 100
+    numToScrape = 10000
     depthToScrape = 2
-    if exists('links.txt'):
+    if exists('links.txt') and exists('visited.txt'):
         links = json.load(open('links.txt'))
-        visited = list(links.keys())
+        visited = json.load(open('visited.txt'))
         os.remove('links.txt')
+        os.remove('visited.txt')
     else:
+        if exists('links.txt'):
+            os.remove('links.txt')
+        if exists('visited.txt'):
+            os.remove('visited.txt')
         initLinks = getLinks('/wiki/Web_scraping')
         links[initLinks[0]] = initLinks[1]
     startNum = len(links.keys())
     bfsIterate(numToScrape, depthToScrape, links, visited, startNum)
     json.dump(links, open('links.txt', 'w'))
-    if(len(links.keys()) > 0):
+    json.dump(visited, open('visited.txt', 'w'))
+    if(len(links.keys())-startNum > 0):
         print(f'Number of pages scraped this time: {len(links.keys())-startNum}')
         print(f'Average time per page: {(time.time()-startTime)/(len(links.keys())-startNum)}')
     else:
@@ -59,20 +65,23 @@ def main():
     
 def bfsIterate(numToScrape, depthToScrape, links, visited, startNum):
     global count, numProcesses
-    print()
     for i in range(depthToScrape):
         for key in list(links.keys()):
-            with Pool(16) as pool:
-                pageChunk = pool.map(getLinks, links[key])
-                for link in pageChunk:
-                    if link[0] not in links.keys():
-                        links[link[0]] = link[1]
-                    if link[0] not in visited:
-                        visited.append(link[0])
-                if len(links.keys())-startNum>=numToScrape:
+            if key not in visited:
+                print(f'Visiting the children of {key}')
+                with Pool(16) as pool:
+                    pageChunk = pool.map(getLinks, links[key])
+                    for link in pageChunk:
+                        if link[0] not in links.keys():
+                            links[link[0]] = link[1]
                     pool.close()
                     pool.join()
-                    return
+                    print(f'Scraped so far: {len(links.keys())-startNum}')
+                    if len(links.keys())-startNum>=numToScrape:
+                        return
+                visited.append(key)
+        initLinks = getLinks('/wiki/Web_scraping')
+        links[initLinks[0]] = initLinks[1]
     return
 if __name__ == '__main__':
     main()
