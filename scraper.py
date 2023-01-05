@@ -16,14 +16,18 @@ def getLinks(urlEndpoint):
     global lastTime, visited
     thisPageLinks = (urlEndpoint, [])
     if urlEndpoint not in visited:
-        response = requests.get(f'https://en.wikipedia.org{urlEndpoint}')
-        soup = BeautifulSoup(response.text, 'html.parser')
-        for link in soup.find_all('a'):
-            linkStr = str(link.get('href'))
-            if linkStr.find(':') != -1:
-                linkStr = linkStr[:linkStr.find(':')]
-            if validLink(linkStr) and linkStr not in thisPageLinks[1]:
-                thisPageLinks[1].append(linkStr)
+        try:
+            response = requests.get(f'https://en.wikipedia.org{urlEndpoint}')
+            soup = BeautifulSoup(response.text, 'html.parser')
+            for link in soup.find_all('a'):
+                linkStr = str(link.get('href'))
+                if linkStr.find(':') != -1:
+                    linkStr = linkStr[:linkStr.find(':')]
+                if validLink(linkStr) and linkStr not in thisPageLinks[1]:
+                    thisPageLinks[1].append(linkStr)
+        except:
+            print(f'The endpoint {urlEndpoint} request failed')
+            thisPageLinks = ['/wiki/Web_scraping']
     return thisPageLinks
 
 def validLink(linkStr):
@@ -38,7 +42,7 @@ def validLink(linkStr):
 def main():
     global count, links, visited
     startTime = time.time()
-    numToScrape = 10000
+    numToScrape = 1000
     depthToScrape = 2
     if exists('links.txt') and exists('visited.txt'):
         links = json.load(open('links.txt'))
@@ -69,7 +73,7 @@ def bfsIterate(numToScrape, depthToScrape, links, visited, startNum):
         for key in list(links.keys()):
             if key not in visited:
                 print(f'Visiting the children of {key}')
-                with Pool(16) as pool:
+                with Pool() as pool:
                     pageChunk = pool.map(getLinks, links[key])
                     for link in pageChunk:
                         if link[0] not in links.keys():
